@@ -5,6 +5,16 @@ import { Customer } from '@/app/lib/definitions';
 import { formatCurrency, getCustomerStatus } from '@/app/lib/utils';
 import StatusBadge from './status';
 import { EyeIcon, XMarkIcon } from '@heroicons/react/24/outline'; 
+import React from 'react';
+
+
+function formatPhoneForWA(phone: string): string {
+  let cleaned = phone.replace(/\D/g, ''); // hapus karakter aneh
+  if (cleaned.startsWith('0')) {
+    cleaned = '62' + cleaned.substring(1);
+  }
+  return cleaned;
+}
 
 export default function CustomersTable({ customers }: { customers: Customer[] }) {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -43,7 +53,14 @@ export default function CustomersTable({ customers }: { customers: Customer[] })
                       {customer.name}
                     </td>
                     <td className="whitespace-nowrap px-3 py-3">
+                    <a
+                      href={`https://wa.me/${formatPhoneForWA(customer.phone)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
                       {customer.phone}
+                    </a>
                     </td>
                     <td className="whitespace-nowrap px-3 py-3 max-w-[200px] truncate">
                       {customer.address}
@@ -96,7 +113,19 @@ export default function CustomersTable({ customers }: { customers: Customer[] })
               </div>
               
               <DetailRow label="Nama" value={selectedCustomer.name} />
-              <DetailRow label="No. HP" value={selectedCustomer.phone} />
+              <DetailRow 
+                    label="No. HP"
+                    value={
+                      <a
+                        href={`https://wa.me/${formatPhoneForWA(selectedCustomer.phone)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {selectedCustomer.phone}
+                      </a>
+                    }
+                  />
               <DetailRow label="Alamat" value={selectedCustomer.address} />
               <DetailRow 
                 label="Total Belanja" 
@@ -125,8 +154,17 @@ export default function CustomersTable({ customers }: { customers: Customer[] })
 }
 
 // Komponen kecil untuk baris detail di modal
-function DetailRow({ label, value, isHighlight = false }: { label: string, value: string, isHighlight?: boolean }) {
-  return (
+    function DetailRow({
+      label,
+      value,
+      isHighlight = false,
+    }: {
+      label: string;
+      value: React.ReactNode;
+      isHighlight?: boolean;
+    }) {
+
+    return (
     <div className="flex justify-between border-b border-gray-100 py-2 last:border-0">
       <span className="text-gray-500">{label}</span>
       <span className={`font-medium ${isHighlight ? 'text-pink-600 font-bold' : 'text-gray-900'} text-right`}>

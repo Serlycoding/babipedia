@@ -334,6 +334,70 @@ export async function getTransactionDetail(id: string) {
   return await fetchTransactionById(id);
 }
 
+export async function deleteTransaction(
+  id: string
+): Promise<{ success: boolean; message: string }> {
+  
+  try {
+    await sql.begin(async (sql) => {
+      // Ambil semua item transaksi
+      const items = await sql`
+        SELECT menu_id, quantity
+        FROM transaction_items
+        WHERE transaction_id = ${id}
+      `;
+
+      // Kembalikan stok per resep
+      for (const item of items) {
+        // Kurangi sold_count
+        await sql`
+          UPDATE menus
+          SET sold_count = sold_count - ${item.quantity}
+          WHERE id = ${item.menu_id}
+        `;
+
+        // Ambil resep menu
+        const recipes = await sql`
+          SELECT stock_id, amount_needed
+          FROM menu_recipes
+          WHERE menu_id = ${item.menu_id}
+        `;
+
+        // Kembalikan stok bahan
+        for (const recipe of recipes) {
+          const returned = recipe.amount_needed * item.quantity;
+
+          await sql`
+            UPDATE stocks
+            SET stock = stock + ${returned}
+            WHERE id = ${recipe.stock_id}
+          `;
+        }
+      }
+
+      // Hapus item transaksi
+      await sql`
+        DELETE FROM transaction_items
+        WHERE transaction_id = ${id}
+      `;
+
+      // Hapus transaksi utama
+      await sql`
+        DELETE FROM transactions
+        WHERE id = ${id}
+      `;
+    });
+
+    revalidatePath("/dashboard/transaksi");
+    return { success: true, message: "Transaksi berhasil dihapus." };
+
+  } catch (error) {
+    console.error("Delete Transaction Error:", error);
+    return { success: false, message: "Gagal menghapus transaksi." };
+  }
+}
+
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createTransaction(prevState: any, formData: FormData) {
   const rawData = {
@@ -414,10 +478,12 @@ export async function createTransaction(prevState: any, formData: FormData) {
       }
     });
 
+
   } catch (error) {
     console.error('Transaction Failed:', error);
     return { message: 'Gagal memproses transaksi.' };
   }
+
 
   revalidatePath('/dashboard/transaksi');
   revalidatePath('/dashboard/stok'); 

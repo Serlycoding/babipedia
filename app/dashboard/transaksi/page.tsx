@@ -18,7 +18,9 @@ export default async function Page(props: { searchParams?: Promise<{ query?: str
   const [transactions, counts] = await Promise.all([
     fetchTransactions(query),
     fetchTransactionCounts(),
+    
   ]);
+  
 
   return (
     <div className="w-full space-y-6">
@@ -46,6 +48,7 @@ export default async function Page(props: { searchParams?: Promise<{ query?: str
       </div>
 
       <TransactionTable transactions={transactions} />
+      
     </div>
   );
 }
